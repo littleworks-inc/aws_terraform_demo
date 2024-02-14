@@ -10,17 +10,11 @@ terraform {
     }
   }
   backend "s3" {
-    # bucket         = "devopsdemobucket01"
-    # key            = "state/terraform.tfstate"
-    # region         = "ca-central-1"
-    # encrypt        = true
-    # dynamodb_table = "devtoolhub"
+
   }
 }
 
 provider "aws" {
   # Configuration options
   region     = var.region
-  # access_key = var.AWS_ACCESS_KEY_ID
-  # secret_key = var.AWS_SECRET_ACCESS_KEY
 }
