@@ -83,7 +83,7 @@ jobs:
         terraform_version: ${{ inputs.tf_version }}
      
     - name: Terraform Init
-      run: terraform init --backend-config="bucket=$aws_backend_bucket_name" --backend-config="key=$aws_backend_bucket_prefix" -backend-config="region=$aws_backend_region" -backend-config="dynamodb_table=$aws_backend_dynamodb_table" -backend-config="$aws_backend_encrypt"
+      run: terraform init --backend-config="bucket=$aws_backend_bucket_name" --backend-config="key=$aws_backend_bucket_prefix" -backend-config="region=$aws_backend_region" -backend-config="dynamodb_table=$aws_backend_dynamodb_table" -backend-config="encrypt=$aws_backend_encrypt"
       
     - name: Terraform Validate
       run: terraform validate 
