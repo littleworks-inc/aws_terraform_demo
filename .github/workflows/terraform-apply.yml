@@ -1,0 +1,92 @@
+name: "TF_Apply"
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        description: "Terraform Root Path"
+        required: true
+        type: string
+      tf_version:
+        description: 'Terraform Version. e.g: 1.3.0 Default=latest.'
+        required: false
+        type: string
+        default: latest
+      tf_vars_file:
+        description: 'Terraform TFVARS file name.'
+        required: true
+        type: string
+      aws_backend_bucket_name:
+        description: 'GCP Storage bucket name to store terraform state file.'
+        required: true
+        type: string
+      aws_backend_bucket_prefix:
+        description: 'GCP Storage bucket folder name to store terraform state file.'
+        required: true
+        type: string
+      aws_backend_region:
+        description: 'GCP Storage bucket folder name to store terraform state file.'
+        required: true
+        type: string
+      aws_backend_dynamodb_table:
+        description: 'GCP Storage bucket folder name to store terraform state file.'
+        required: true
+        type: string
+      aws_backend_encrypt:
+        description: 'AWS storage encryption'
+        required: true
+        type: boolean
+      # environment:
+      #   description: 'manual approvals in GitHub Actions with the Environments.'
+      #   required: true
+      #   type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        description: 'AWS Access key ID'
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        description: 'AWS Secret Access Key'
+        required: true
+
+jobs:
+  build-apply:
+    runs-on: ubuntu-latest
+    # environment: ${{ inputs.environment }}
+    
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.path }}
+
+    env:
+      aws_backend_bucket_name: ${{ inputs.aws_backend_bucket_name }}
+      aws_backend_bucket_prefix: ${{ inputs.aws_backend_bucket_prefix }}
+      aws_backend_region: ${{ inputs.aws_backend_region }}
+      aws_backend_dynamodb_table: ${{ inputs.aws_backend_dynamodb_table }}
+      aws_backend_encrypt: ${{ inputs.aws_backend_encrypt }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Download Artifact
+      uses: actions/download-artifact@v3.0.2
+      with:
+        name: ${{ inputs.aws_backend_bucket_name }}
+        path: ${{ inputs.path }}
+
+    - name: Decompress TF Plan artifact
+      run: echo "y" | unzip -o ${{ inputs.aws_backend_bucket_name }}.zip
+      
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ inputs.tf_version }}
+    
+    - name: Terraform Init
+      run: terraform init --backend-config="bucket=$aws_backend_bucket_name" --backend-config="key=$aws_backend_bucket_prefix" -backend-config="region=$aws_backend_region" -backend-config="dynamodb_table=$aws_backend_dynamodb_table" -backend-config="$aws_backend_encrypt"
+
+    - name: Terraform Apply
+      run: terraform apply plan.tfplan 

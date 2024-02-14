@@ -1,0 +1,44 @@
+name: 'Infra_build'
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+    Dev_Plan:
+        uses: littleworks-inc/gcp_terraform_demo/.github/workflows/terraform-pan.yml@main
+        with:
+            path: .
+            tf_version: latest
+            aws_backend_bucket_name: devopsdemobucket01
+            aws_backend_bucket_prefix: state/terraform.tfstate
+            aws_backend_region: ca-central-1
+            aws_backend_dynamodb_table: devtoolhub
+            aws_backend_encrypt: true
+            tf_vars_file: dev.tfvars 
+            # environment: dev
+        secrets:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    Dev_Deploy:
+        needs: Dev_Plan
+        uses: littleworks-inc/gcp_terraform_demo/.github/workflows/terraform-apply.yml@main
+        with:
+          path: .
+          tf_version: latest
+          aws_backend_bucket_name: devopsdemobucket01
+          aws_backend_bucket_prefix: state/terraform.tfstate
+          aws_backend_region: ca-central-1
+          aws_backend_dynamodb_table: devtoolhub
+          aws_backend_encrypt: true
+          tf_vars_file: dev.tfvars 
+          # environment: dev
+        secrets:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
